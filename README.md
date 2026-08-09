@@ -1,7 +1,3 @@
-
-
-## GitHub Activity
-
 <h2 align="center">GitHub Activity</h2>
 
 <p align="center">
@@ -24,13 +20,8 @@
 ### vincentic
 
 Hello I am vincent 
-
 vincent is energetic 
-
 so make it vincentic as this username
-
 I am a web developer
-
 super love coding
-
 thanks for visiting me~
