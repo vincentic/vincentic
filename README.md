@@ -19,9 +19,9 @@
 
 ### vincentic
 
-Hello I am vincent 
-vincent is energetic 
+Hello I am vincent,
+vincent is energetic,
 so make it vincentic as this username
-I am a web developer
-super love coding
+I am a web developer,
+super love coding in my life,
 thanks for visiting me~
