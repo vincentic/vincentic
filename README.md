@@ -2,11 +2,28 @@
 
 ## GitHub Activity
 
-[![GitHub Weekly Streak](https://streak-stats.demolab.com?user=vincentic&mode=weekly&hide_border=true)](https://git.io/streak-stats)
+<h2 align="center">GitHub Activity</h2>
 
-![GitHub Contribution Graph](https://gitlyy.vercel.app/api/contribution?username=vincentic&hide_border=true)
+<p align="center">
+  <img
+    width="98%"
+    src="https://gitlyy.vercel.app/api/contribution?username=vincentic&hide_border=true"
+    alt="GitHub Contribution Graph"
+  />
+</p>
 
-[![GitHub Streak](https://streak-stats.demolab.com?user=vincentic&hide_border=true)](https://git.io/streak-stats)
+<p align="center">
+  <img
+    width="49%"
+    src="https://streak-stats.demolab.com?user=vincentic&mode=daily&locale=zh_Hans&hide_border=true"
+    alt="连续活跃天数"
+  />
+  <img
+    width="49%"
+    src="https://streak-stats.demolab.com?user=vincentic&mode=weekly&locale=zh_Hans&hide_border=true"
+    alt="连续活跃周数"
+  />
+</p>
 
 ### vincentic
 
