@@ -12,5 +12,9 @@ super love coding
 
 thanks for visiting me~
 
-# GitHub Activtity
+
+## GitHub Activity
+
 ![GitHub Contribution Graph](https://gitlyy.vercel.app/api/contribution?username=vincentic&hide_border=true)
+
+[![GitHub Streak](https://streak-stats.demolab.com?user=vincentic&hide_border=true)](https://git.io/streak-stats)
