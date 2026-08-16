@@ -1,18 +1,21 @@
-name: Update GitHub Streak Stats
+name: Update GitHub Profile Stats
 
 on:
   schedule:
-    # 每天北京时间 00:10 执行
+    # 每天北京时间 00:10
     - cron: "10 16 * * *"
 
-  # 支持在 Actions 页面手动运行
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: update-profile-stats
+  cancel-in-progress: true
+
 jobs:
-  update-streak:
+  update-profile-stats:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,6 +24,8 @@ jobs:
 
       - name: Create profile directory
         run: mkdir -p profile
+
+      # ---------- 连续活跃天数 ----------
 
       - name: Generate light streak card
         uses: be-next/github-streak-stats-action@v1
@@ -42,10 +47,81 @@ jobs:
           timezone: Asia/Shanghai
           hide-border: true
 
-      - name: Commit generated cards
+      # ---------- Gitlyy 贡献统计 ----------
+
+      - name: Download light contribution card
+        shell: bash
+        run: |
+          temp_file="$(mktemp)"
+
+          if curl \
+            --fail \
+            --location \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-delay 5 \
+            --max-time 60 \
+            'https://gitlyy.vercel.app/api/contribution?username=vincentic&locale=en&hide_border=true' \
+            --output "$temp_file" &&
+            grep --quiet --ignore-case '<svg' "$temp_file"
+          then
+            mv "$temp_file" profile/contribution-light.svg
+            echo "Light contribution SVG updated"
+          else
+            rm -f "$temp_file"
+
+            if [ -f profile/contribution-light.svg ]; then
+              echo "::warning::Gitlyy unavailable; preserving previous light SVG"
+            else
+              echo "::error::Gitlyy failed and no previous light SVG exists"
+              exit 1
+            fi
+          fi
+
+      - name: Download dark contribution card
+        shell: bash
+        run: |
+          temp_file="$(mktemp)"
+
+          if curl \
+            --fail \
+            --location \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-delay 5 \
+            --max-time 60 \
+            'https://gitlyy.vercel.app/api/contribution?username=vincentic&locale=en&hide_border=true&theme=github_dark' \
+            --output "$temp_file" &&
+            grep --quiet --ignore-case '<svg' "$temp_file"
+          then
+            mv "$temp_file" profile/contribution-dark.svg
+            echo "Dark contribution SVG updated"
+          else
+            rm -f "$temp_file"
+
+            if [ -f profile/contribution-dark.svg ]; then
+              echo "::warning::Gitlyy unavailable; preserving previous dark SVG"
+            else
+              echo "::error::Gitlyy failed and no previous dark SVG exists"
+              exit 1
+            fi
+          fi
+
+      # ---------- 保存结果 ----------
+
+      - name: Commit generated SVG files
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add profile/streak-light.svg profile/streak-dark.svg
-          git diff --cached --quiet || git commit -m "chore: update streak stats"
-          git push
+
+          git add profile/*.svg
+
+          if git diff --cached --quiet; then
+            echo "No SVG changes"
+          else
+            git commit -m "chore: update GitHub profile stats"
+            git push
+          fi
