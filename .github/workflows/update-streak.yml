@@ -2,9 +2,8 @@ name: Update GitHub Profile Stats
 
 on:
   schedule:
-    # 每天北京时间 00:10
+    # 00:10 Asia/Shanghai (GitHub cron expressions use UTC)
     - cron: "10 16 * * *"
-
   workflow_dispatch:
 
 permissions:
@@ -17,20 +16,19 @@ concurrency:
 jobs:
   update-profile-stats:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Create profile directory
+      - name: Create output directory
         run: mkdir -p profile
-
-      # ---------- 连续活跃天数 ----------
 
       - name: Generate light streak card
         uses: be-next/github-streak-stats-action@v1
         with:
-          username: vincentic
+          username: ${{ github.repository_owner }}
           token: ${{ secrets.GITHUB_TOKEN }}
           output-path: profile/streak-light.svg
           theme: default
@@ -40,19 +38,19 @@ jobs:
       - name: Generate dark streak card
         uses: be-next/github-streak-stats-action@v1
         with:
-          username: vincentic
+          username: ${{ github.repository_owner }}
           token: ${{ secrets.GITHUB_TOKEN }}
           output-path: profile/streak-dark.svg
           theme: dark
           timezone: Asia/Shanghai
           hide-border: true
 
-      # ---------- Gitlyy 贡献统计 ----------
-
-      - name: Download light contribution card
+      - name: Download Gitlyy contribution card
+        id: gitlyy
         shell: bash
         run: |
           temp_file="$(mktemp)"
+          url="https://gitlyy.vercel.app/api/contribution?username=${{ github.repository_owner }}&locale=en&hide_border=true"
 
           if curl \
             --fail \
@@ -60,56 +58,56 @@ jobs:
             --silent \
             --show-error \
             --retry 3 \
+            --retry-all-errors \
             --retry-delay 5 \
-            --max-time 60 \
-            'https://gitlyy.vercel.app/api/contribution?username=vincentic&locale=en&hide_border=true' \
-            --output "$temp_file" &&
-            grep --quiet --ignore-case '<svg' "$temp_file"
-          then
-            mv "$temp_file" profile/contribution-light.svg
-            echo "Light contribution SVG updated"
-          else
-            rm -f "$temp_file"
-
-            if [ -f profile/contribution-light.svg ]; then
-              echo "::warning::Gitlyy unavailable; preserving previous light SVG"
-            else
-              echo "::error::Gitlyy failed and no previous light SVG exists"
-              exit 1
-            fi
-          fi
-
-      - name: Download dark contribution card
-        shell: bash
-        run: |
-          temp_file="$(mktemp)"
-
-          if curl \
-            --fail \
-            --location \
-            --silent \
-            --show-error \
-            --retry 3 \
-            --retry-delay 5 \
-            --max-time 60 \
-            'https://gitlyy.vercel.app/api/contribution?username=vincentic&locale=en&hide_border=true&theme=github_dark' \
+            --connect-timeout 15 \
+            --max-time 90 \
+            "$url" \
             --output "$temp_file" &&
             grep --quiet --ignore-case '<svg' "$temp_file"
           then
             mv "$temp_file" profile/contribution-dark.svg
-            echo "Dark contribution SVG updated"
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+            echo "Contribution SVG downloaded"
           else
             rm -f "$temp_file"
+            echo "updated=false" >> "$GITHUB_OUTPUT"
 
             if [ -f profile/contribution-dark.svg ]; then
-              echo "::warning::Gitlyy unavailable; preserving previous dark SVG"
+              echo "::warning::Gitlyy is unavailable; preserving the previous contribution cards"
             else
-              echo "::error::Gitlyy failed and no previous dark SVG exists"
+              echo "::error::Gitlyy failed and no previous contribution SVG exists"
               exit 1
             fi
           fi
 
-      # ---------- 保存结果 ----------
+      - name: Generate light contribution card
+        if: steps.gitlyy.outputs.updated == 'true'
+        shell: bash
+        run: |
+          cp profile/contribution-dark.svg profile/contribution-light.svg
+
+          # Gitlyy's contribution endpoint currently emits a dark SVG even when
+          # theme=light is requested. Change only the first #0d1117 fill (the
+          # card background) before applying the remaining GitHub-light palette.
+          perl -0pi -e 's/(<rect\b[^>]*\bfill=")#0d1117"/${1}#ffffff"/' \
+            profile/contribution-light.svg
+
+          sed -i \
+            -e 's/#161b22/#ebedf0/g' \
+            -e 's/#0e4429/#9be9a8/g' \
+            -e 's/#006d32/#40c463/g' \
+            -e 's/#26a641/#30a14e/g' \
+            -e 's/#39d353/#216e39/g' \
+            -e 's/#58a6ff/#0969da/g' \
+            -e 's/#30363d/#d0d7de/g' \
+            -e 's/#8b949e/#57606a/g' \
+            -e 's/#e6edf3/#24292f/g' \
+            -e 's/#0d1117/#24292f/g' \
+            profile/contribution-light.svg
+
+          grep --quiet 'fill="#ffffff"' profile/contribution-light.svg
+          grep --quiet 'fill="#0d1117"' profile/contribution-dark.svg
 
       - name: Commit generated SVG files
         shell: bash
