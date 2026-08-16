@@ -1,0 +1,51 @@
+name: Update GitHub Streak Stats
+
+on:
+  schedule:
+    # 每天北京时间 00:10 执行
+    - cron: "10 16 * * *"
+
+  # 支持在 Actions 页面手动运行
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-streak:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Create profile directory
+        run: mkdir -p profile
+
+      - name: Generate light streak card
+        uses: be-next/github-streak-stats-action@v1
+        with:
+          username: vincentic
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output-path: profile/streak-light.svg
+          theme: default
+          timezone: Asia/Shanghai
+          hide-border: true
+
+      - name: Generate dark streak card
+        uses: be-next/github-streak-stats-action@v1
+        with:
+          username: vincentic
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output-path: profile/streak-dark.svg
+          theme: dark
+          timezone: Asia/Shanghai
+          hide-border: true
+
+      - name: Commit generated cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profile/streak-light.svg profile/streak-dark.svg
+          git diff --cached --quiet || git commit -m "chore: update streak stats"
+          git push
